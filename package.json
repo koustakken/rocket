@@ -1,0 +1,10 @@
+{
+  "name": "rocket",
+  "version": "1.0.0",
+  "description": "hiring task rocket",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "@kstokke99",
+  "license": "ISC"
+}
