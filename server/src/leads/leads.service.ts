@@ -7,7 +7,7 @@ export class LeadsService {
   private readonly client: Client;
   constructor() {
     this.client = new Client({
-      domain: 'kouswalljust',
+      domain: AMOCRM_CONFIG.domain,
       auth: {
         client_id: AMOCRM_CONFIG.client_id,
         client_secret: AMOCRM_CONFIG.client_secret,
@@ -15,6 +15,11 @@ export class LeadsService {
         bearer: AMOCRM_CONFIG.code,
       },
     });
+  }
+
+  async testConnection() {
+    console.log(AMOCRM_CONFIG);
+    return await this.client.connection.connect();
   }
 
   async getLeads() {

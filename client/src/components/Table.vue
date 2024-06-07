@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { onMounted, ref } from 'vue'
 import {
   Table,
   InputSearch,
@@ -7,83 +7,81 @@ import {
   Button,
   Tag,
   TableColumn,
-} from "ant-design-vue";
-import axios from "axios";
+} from 'ant-design-vue'
+import { axiosClient } from '../config/axios'
 
-const isLoading = ref(true);
-const data = ref([]);
+const isLoading = ref(true)
+const data = ref([])
 
-const value = ref("");
+const value = ref('')
 const onSearch = () => {
-  if (value.value.length < 3) return false;
-  console.log(value.value);
-  fetchSearchTerm(value.value);
-};
+  if (value.value.length < 3) return false
+  console.log(value.value)
+  fetchSearchTerm(value.value)
+}
 
 const columns = [
   {
-    title: "Name",
-    dataIndex: "name",
-    key: "name",
+    title: 'Name',
+    dataIndex: 'name',
+    key: 'name',
   },
   {
-    title: "Price",
-    dataIndex: "price",
-    key: "price",
+    title: 'Price',
+    dataIndex: 'price',
+    key: 'price',
   },
   {
-    title: "Created At",
-    key: "created_at",
-    dataIndex: "created_at",
+    title: 'Created At',
+    key: 'created_at',
+    dataIndex: 'created_at',
   },
   {
-    title: "Company",
-    key: "company",
-    dataIndex: "company",
+    title: 'Company',
+    key: 'company',
+    dataIndex: 'company',
   },
   {
-    title: "Manager",
-    key: "manager",
-    dataIndex: "manager",
+    title: 'Manager',
+    key: 'manager',
+    dataIndex: 'manager',
   },
   {
-    title: "Status",
-    key: "pipeline",
-    dataIndex: "pipeline",
+    title: 'Status',
+    key: 'pipeline',
+    dataIndex: 'pipeline',
   },
-];
+]
 
 const fetchData = async () => {
   try {
-    isLoading.value = true;
-    const response = await axios("http://localhost:3000/api/leads");
-    isLoading.value = false;
-    console.log(response.data);
-    data.value = response.data;
+    isLoading.value = true
+    const response = await axiosClient.get('/leads')
+    isLoading.value = false
+    console.log(response.data)
+    data.value = response.data
   } catch (error) {
-    isLoading.value = false;
-    console.log(error);
+    isLoading.value = false
+    console.log(error)
   }
-};
+}
 
 const fetchSearchTerm = async (searthTerm: string) => {
   try {
-    isLoading.value = true;
-    const response = await axios(
-      `http://localhost:3000/api/leads/${searthTerm}`
-    );
-    isLoading.value = false;
-    console.log(response.data);
-    data.value = response.data;
+    isLoading.value = true
+    const response = await axiosClient.get(`/leads/${searthTerm}`)
+    isLoading.value = false
+    console.log(response.data)
+    data.value = response.data
   } catch (error) {
-    isLoading.value = false;
-    console.log(error);
+    isLoading.value = false
+    console.log(error)
   }
-};
+}
 
 onMounted(() => {
-  fetchData();
-});
+  //fetchData()
+})
 </script>
 
 <template>
@@ -112,15 +110,6 @@ onMounted(() => {
           {{ record.contacts }}
         </p>
       </template>
-      <TableColumn key="pipeline" title="Status" data-index="pipeline">
-        <template #default="{ pipeline }">
-          <span>
-            <Tag :key="pipeline" color="blue">
-              {{ pipeline }}
-            </Tag>
-          </span>
-        </template>
-      </TableColumn>
     </Table>
   </div>
 </template>
