@@ -16,7 +16,6 @@ const data = ref([])
 const value = ref('')
 const onSearch = () => {
   if (value.value.length < 3) return false
-  console.log(value.value)
   fetchSearchTerm(value.value)
 }
 
@@ -58,7 +57,6 @@ const fetchData = async () => {
     isLoading.value = true
     const response = await axiosClient.get('/leads')
     isLoading.value = false
-    console.log(response.data)
     data.value = response.data
   } catch (error) {
     isLoading.value = false
@@ -71,7 +69,6 @@ const fetchSearchTerm = async (searthTerm: string) => {
     isLoading.value = true
     const response = await axiosClient.get(`/leads/${searthTerm}`)
     isLoading.value = false
-    console.log(response.data)
     data.value = response.data
   } catch (error) {
     isLoading.value = false
