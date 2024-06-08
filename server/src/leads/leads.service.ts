@@ -5,6 +5,7 @@ import { AMOCRM_CONFIG } from 'src/auth/config';
 @Injectable()
 export class LeadsService {
   private readonly client: Client;
+
   constructor() {
     this.client = new Client({
       domain: AMOCRM_CONFIG.domain,
@@ -17,6 +18,65 @@ export class LeadsService {
     });
   }
 
+  async prepareLeadData(leads) {
+    const preparedLeadsPromises = leads.map((lead) =>
+      this.prepareLeadDataHelper(lead),
+    );
+    const preparedLeads = await Promise.allSettled(preparedLeadsPromises);
+
+    const fulfilledResults = preparedLeads.filter(
+      (result) => result.status === 'fulfilled',
+    );
+    const preparedData = fulfilledResults.map((result) => {
+      if (result.status === 'fulfilled') {
+        return result.value;
+      } else {
+        return { error: 'Failed to prepare lead data' };
+      }
+    });
+
+    return preparedData;
+  }
+
+  async prepareLeadDataHelper(lead) {
+    try {
+      const companyId = lead['_embedded'].companies[0].id;
+      const contactId = lead['_embedded'].contacts[0].id;
+      const managerId = lead.responsible_user_id;
+      const pipelineId = lead.pipeline_id;
+
+      const [company, contact, manager, pipeline] = await Promise.allSettled([
+        this.getCompanyById(companyId),
+        this.getContactsById(contactId),
+        this.getManagerById(managerId),
+        this.getPipelineById(pipelineId),
+      ]);
+
+      return {
+        name: lead.name,
+        price: lead.price,
+        created_at: new Date(lead.created_at).toLocaleDateString(),
+        company: company.status === 'fulfilled' ? company.value : '-',
+        contacts: contact.status === 'fulfilled' ? contact.value : '-',
+        manager: manager.status === 'fulfilled' ? manager.value : '-',
+        pipeline: pipeline.status === 'fulfilled' ? pipeline.value : '-',
+      };
+    } catch (error) {
+      console.error('Error preparing lead data', error);
+      throw error;
+    }
+  }
+
+  private async fetchData(url, params = {}) {
+    try {
+      const response = await this.client.request.get(url, params);
+      return response.data['_embedded'];
+    } catch (error) {
+      console.error(`Error fetching data from ${url}`, error);
+      throw error;
+    }
+  }
+
   async testConnection() {
     console.log(AMOCRM_CONFIG);
     return await this.client.connection.connect();
@@ -24,126 +84,64 @@ export class LeadsService {
 
   async getLeads() {
     try {
-      const leads = await this.client.request.get(
-        '/api/v4/leads?with=contacts',
-      );
-      const preparePromises = leads.data['_embedded'].leads.map(
-        (lead, index) => ({
-          key: index + 1,
-          name: lead.name,
-          price: lead.price,
-          created_at: new Date(lead.created_at).toLocaleDateString(),
-          company:
-            this.getCompanyById(lead['_embedded'].companies[0].id) || '-',
-          contacts:
-            this.getContactsById(lead['_embedded'].contacts[0].id) || '-',
-          manager: this.getManagerById(lead.responsible_user_id) || '-',
-          pipeline: this.getPipelineById(lead.pipeline_id) || '-',
-        }),
-      );
-
-      const prepare = await Promise.all(
-        preparePromises.map(async (preparePromises) => {
-          return {
-            ...preparePromises,
-            company: await preparePromises.company,
-            contacts: await preparePromises.contacts,
-            manager: await preparePromises.manager,
-            pipeline: await preparePromises.pipeline,
-          };
-        }),
-      );
-
-      return prepare;
+      const leads = await this.fetchData('/api/v4/leads?with=contacts');
+      const preparedLeads = await this.prepareLeadData(leads.leads);
+      return preparedLeads;
     } catch (error) {
-      console.log('Error fetching leads', error);
+      console.error('Error fetching leads', error);
+      throw error;
     }
   }
 
   async searchLeadbyName(searchTerm: string) {
     try {
-      const response = await this.client.request.get('/api/v4/leads', {
+      const response = await this.fetchData('/api/v4/leads', {
         with: 'contacts',
         query: searchTerm,
       });
-      // return response.data['_embedded'].leads;
-
-      const preparePromises = response.data['_embedded'].leads.map(
-        (lead, index) => ({
-          key: index + 1,
-          name: lead.name,
-          price: lead.price,
-          created_at: new Date(lead.created_at).toLocaleDateString(),
-          company:
-            this.getCompanyById(lead['_embedded'].companies[0].id) || '-',
-          contacts:
-            this.getContactsById(lead['_embedded'].contacts[0].id) || '-',
-          manager: this.getManagerById(lead.responsible_user_id) || '-',
-          pipeline: this.getPipelineById(lead.pipeline_id) || '-',
-        }),
-      );
-      const prepare = await Promise.all(
-        preparePromises.map(async (preparePromises) => {
-          return {
-            ...preparePromises,
-            company: await preparePromises.company,
-            contacts: await preparePromises.contacts,
-            manager: await preparePromises.manager,
-            pipeline: await preparePromises.pipeline,
-          };
-        }),
-      );
-
-      return prepare;
+      console.log('@search', response.leads);
+      const leads = response.leads;
+      const preparedLeads = await this.prepareLeadData(leads);
+      return preparedLeads;
     } catch (error) {
-      console.log('Error search leads', error);
+      console.error('Error searching leads', error);
+      throw error;
     }
   }
 
   async getCompanyById(id: string) {
-    try {
-      const response = await this.client.request.get('/api/v4/companies', {
-        id,
+    return this.fetchData('/api/v4/companies', { id })
+      .then((data) => data.companies[0].name)
+      .catch((error) => {
+        console.error('Error fetching company', error);
+        throw error;
       });
-      return response.data['_embedded'].companies[0].name;
-    } catch (error) {
-      console.log('Error fetch company', error);
-    }
   }
 
   async getContactsById(id: string) {
-    try {
-      const response = await this.client.request.get('/api/v4/contacts', {
-        id,
+    return this.fetchData('/api/v4/contacts', { id })
+      .then((data) => data.contacts[0].name)
+      .catch((error) => {
+        console.error('Error fetching contacts', error);
+        throw error;
       });
-      return response.data['_embedded'].contacts[0].name;
-    } catch (error) {
-      console.log('Error fetch contacts', error);
-    }
   }
 
   async getManagerById(id: string) {
-    try {
-      const response = await this.client.request.get('/api/v4/users', {
-        id,
+    return this.fetchData('/api/v4/users', { id })
+      .then((data) => data.users[0].name)
+      .catch((error) => {
+        console.error('Error fetching manager', error);
+        throw error;
       });
-      return response.data['_embedded']['users'][0].name;
-    } catch (error) {
-      console.log('Error fetch contacts', error);
-    }
   }
 
   async getPipelineById(id: string) {
-    try {
-      const response = await this.client.request.get(
-        '/api/v4/leads/pipelines/8251830/statuses',
-        {
-          id,
-        },
-      );
-      return response.data['_embedded'].statuses[0].name;
-    } catch (error) {
-      console.log('Error fetch contacts', error);
-    }
+    return this.fetchData('/api/v4/leads/pipelines/8251830/statuses', { id })
+      .then((data) => data.statuses[0].name)
+      .catch((error) => {
+        console.error('Error fetching pipeline', error);
+        throw error;
+      });
   }
 }

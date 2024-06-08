@@ -7,6 +7,7 @@ export class LeadsController {
 
   @Get('leads')
   getLeads() {
+    // return this.leadsService.testConnection();
     return this.leadsService.getLeads();
   }
 
