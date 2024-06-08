@@ -10,5 +10,5 @@
 - [x] client & server
 - [x] fetching data
 - [x] start together
-- [] queries cache
-- [] rendring client/server
+- [ ] queries cache
+- [ ] rendring client/server
