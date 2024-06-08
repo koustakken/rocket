@@ -9,6 +9,6 @@
 - [x] auth amoCRM
 - [x] client & server
 - [x] fetching data
-- [] start together
+- [x] start together
 - [] queries cache
 - [] rendring client/server

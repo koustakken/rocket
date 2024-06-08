@@ -77,7 +77,7 @@ const fetchSearchTerm = async (searthTerm: string) => {
 }
 
 onMounted(() => {
-  //fetchData()
+  fetchData()
 })
 </script>
 
