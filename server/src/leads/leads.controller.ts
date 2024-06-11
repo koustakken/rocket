@@ -9,6 +9,7 @@ export class LeadsController {
   getLeads() {
     // return this.leadsService.testConnection();
     return this.leadsService.getLeads();
+    // return this.leadsService.getPipelineById(id);
   }
 
   @Get('leads/:searchterm')

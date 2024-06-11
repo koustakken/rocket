@@ -43,7 +43,7 @@ export class LeadsService {
       const companyId = lead['_embedded'].companies[0].id;
       const contactId = lead['_embedded'].contacts[0].id;
       const managerId = lead.responsible_user_id;
-      const pipelineId = lead.pipeline_id;
+      const pipelineId = lead.status_id;
 
       const [company, contact, manager, pipeline] = await Promise.allSettled([
         this.getCompanyById(companyId),
@@ -53,6 +53,7 @@ export class LeadsService {
       ]);
 
       return {
+        key: Math.random(),
         name: lead.name,
         price: lead.price,
         created_at: new Date(lead.created_at).toLocaleDateString(),
@@ -119,12 +120,19 @@ export class LeadsService {
   }
 
   async getContactsById(id: string) {
-    return this.fetchData('/api/v4/contacts', { id })
-      .then((data) => data.contacts[0].name)
-      .catch((error) => {
-        console.error('Error fetching contacts', error);
-        throw error;
-      });
+    // return this.fetchData('/api/v4/contacts', { id })
+    //   .then((data) => data.contacts[0].name)
+    //   .catch((error) => {
+    //     console.error('Error fetching contacts', error);
+    //     throw error;
+    //   });
+    try {
+      const response = await this.fetchData('/api/v4/contacts', { id });
+      const result = response.contacts[0];
+      return [result.name, result.custom_fields_values[0].values[0].value];
+    } catch (error) {
+      console.log(error);
+    }
   }
 
   async getManagerById(id: string) {
@@ -137,11 +145,15 @@ export class LeadsService {
   }
 
   async getPipelineById(id: string) {
-    return this.fetchData('/api/v4/leads/pipelines/8251830/statuses', { id })
-      .then((data) => data.statuses[0].name)
-      .catch((error) => {
-        console.error('Error fetching pipeline', error);
-        throw error;
-      });
+    try {
+      const response = await this.fetchData(
+        '/api/v4/leads/pipelines/8251830/statuses',
+        { id },
+      );
+      const result = response.statuses.find((m) => m.id == id);
+      return [result.name, result.color];
+    } catch (error) {
+      console.log(error);
+    }
   }
 }
