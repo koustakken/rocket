@@ -3,13 +3,8 @@
   "version": "1.0.0",
   "description": "hiring task rocket",
   "scripts": {
-    "start": "concurrently \"npm run start:server\" \"npm run start:client\"",
-    "start:server": "cd server && npm install && npm run start:dev",
-    "start:client": "cd client && npm install && npm run dev"
+    "start": "cd server && npm run start:prod"
   },
   "author": "@kstokke99",
-  "license": "ISC",
-  "devDependencies": {
-    "concurrently": "^8.2.2"
-  }
+  "license": "ISC"
 }
